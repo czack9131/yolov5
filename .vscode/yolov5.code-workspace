@@ -3,6 +3,9 @@
 		{
 			"path": ".."
 		},
+		{
+			"path": "../../datasets"
+		}
 	],
 	"settings": {
 		"editor.formatOnPaste": true,
@@ -80,6 +83,12 @@
 		},
 		"[python]": {
 			"editor.defaultFormatter": "ms-python.black-formatter"
-		}
+		},
+		"notebook.insertFinalNewline": false,
+		"notebook.lineNumbers": "off",
+		"files.trimFinalNewlines": true,
+		"less.format.maxPreserveNewLines": 1,
+		"css.format.maxPreserveNewLines": 1,
+		"editor.renderFinalNewline": "off"
 	}
 }
