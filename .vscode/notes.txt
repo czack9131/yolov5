@@ -1,0 +1,3 @@
+Android device not connecting to metro server
+https://docs.expo.dev/get-started/create-a-project/#open-the-app-on-your-device
+npx expo start --tunnel

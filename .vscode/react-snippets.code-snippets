@@ -1,0 +1,61 @@
+{
+  // Place your App workspace snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and
+  // description. Add comma separated ids of the languages where the snippet is applicable in the scope field. If scope
+  // is left empty or omitted, the snippet gets applied to all languages. The prefix is what is
+  // used to trigger the snippet and the body will be expanded and inserted. Possible variables are:
+  // $1, $2 for tab stops, $0 for the final cursor position, and ${1:label}, ${2:another} for placeholders.
+  // Placeholders with the same ids are connected.
+  // Example:
+  // "Print to console": {
+  // 	"scope": "javascript,typescript",
+  // 	"prefix": "log",
+  // 	"body": [
+  // 		"console.log('$1');",
+  // 		"$2"
+  // 	],
+  // 	"description": "Log output to console"
+  // }
+
+  "Print to console": {
+    "scope": "javascript,typescript,typescriptreact",
+    "prefix": "log",
+    "body": ["console.log('$1');", "$2"],
+    "description": "Log output to console"
+  },
+  "Create React Typed State": {
+    "scope": "typescript,typescriptreact",
+    "prefix": "rts",
+    "body": [
+      "const [$1, set${1/(.*)/${1:/capitalize}/}] = React.useState<$2>($3);",
+      "$0"
+    ],
+    "description": "Create a new typed state in a React component with TypeScript"
+  },
+  "Create React Effect": {
+    "scope": "javascript,javascriptreact,typescript,typescriptreact",
+    "prefix": "reff",
+    "body": ["React.useEffect(() => {$0}, []);"],
+    "description": "Create a Effect in a React component."
+  },
+  "Create React Callback": {
+    "scope": "javascript,javascriptreact,typescript,typescriptreact",
+    "prefix": "rcb",
+    "body": ["const $1 = React.useCallback(() => {$0}, []);"],
+    "description": "Create a Callback in a React component."
+  },
+  "Deconstruct Props": {
+    "scope": "javascript,javascriptreact,typescript,typescriptreact",
+    "prefix": "dcp",
+    "body": ["const {$1} = props;"]
+  },
+  "React Typescript Use Nullable Ref": {
+    "scope": "typescript,typescriptreact",
+    "prefix": "runr",
+    "body": ["const $1 = React.useRef<$2 | null>(null);"]
+  },
+  "React Typescript Use Memo": {
+    "scope": "typescript,typescriptreact",
+    "prefix": "rmem",
+    "body": ["const $1 = React.useMemo<$2>(() => {}, []);"]
+  }
+}
