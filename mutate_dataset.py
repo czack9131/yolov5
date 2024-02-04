@@ -15,12 +15,12 @@ OUTPUT_ANNOTATION_DIR = f"{BASE_DIR}/datasets/yolo/labels/out"
 MUTATED_IMAGE_DIR = f"{BASE_DIR}/datasets/resized/temp/images"
 MUTATED_ANNOTATION_DIR = f"{BASE_DIR}/datasets/resized/temp/labels"
 
-os.makedirs(INPUT_IMAGE_DIR, exist_ok=True)
-os.makedirs(OUTPUT_IMAGE_DIR, exist_ok=True)
-os.makedirs(MUTATED_IMAGE_DIR, exist_ok=True)
-os.makedirs(INPUT_ANNOTATION_DIR, exist_ok=True)
-os.makedirs(OUTPUT_ANNOTATION_DIR, exist_ok=True)
-os.makedirs(MUTATED_ANNOTATION_DIR, exist_ok=True)
+# os.makedirs(INPUT_IMAGE_DIR, exist_ok=True)
+# os.makedirs(OUTPUT_IMAGE_DIR, exist_ok=True)
+# os.makedirs(MUTATED_IMAGE_DIR, exist_ok=True)
+# os.makedirs(INPUT_ANNOTATION_DIR, exist_ok=True)
+# os.makedirs(OUTPUT_ANNOTATION_DIR, exist_ok=True)
+# os.makedirs(MUTATED_ANNOTATION_DIR, exist_ok=True)
 
 ANGLE_TO_RADIANS_FACTOR = 3.141592653589793 / 180.0
 RADIANS = {
@@ -149,7 +149,39 @@ def transformAnnotation(output_path: str, lines: list[str], angle: float):
 
 # reformatNames(INPUT_ANNOTATION_DIR, OUTPUT_ANNOTATION_DIR, (".txt", ".jpg", ".jpeg"))
 # reformatNames(INPUT_IMAGE_DIR, OUTPUT_IMAGE_DIR, (".txt", ".jpg", ".jpeg"))
-reformatNames(INPUT_ANNOTATION_DIR, OUTPUT_ANNOTATION_DIR, (".txt", ".jpg", ".jpeg"))
+# reformatNames(INPUT_ANNOTATION_DIR, OUTPUT_ANNOTATION_DIR, (".txt", ".jpg", ".jpeg"))
 
-# transformImages(OUTPUT_IMAGE_DIR, MUTATED_IMAGE_DIR)
-# transformAnnotations(OUTPUT_ANNOTATION_DIR, MUTATED_ANNOTATION_DIR)
+A = f"{BASE_DIR}/datasets/yolo/images/train"
+B = f"{BASE_DIR}/datasets/yolo/images/val"
+C = f"{BASE_DIR}/datasets/yolo/images/test"
+AA = f"{BASE_DIR}/datasets/resized/images/train"
+BB = f"{BASE_DIR}/datasets/resized/images/val"
+CC = f"{BASE_DIR}/datasets/resized/images/test"
+
+D = f"{BASE_DIR}/datasets/yolo/labels/train"
+E = f"{BASE_DIR}/datasets/yolo/labels/val"
+F = f"{BASE_DIR}/datasets/yolo/labels/test"
+DD = f"{BASE_DIR}/datasets/resized/labels/train"
+EE = f"{BASE_DIR}/datasets/resized/labels/val"
+FF = f"{BASE_DIR}/datasets/resized/labels/test"
+
+os.makedirs(A, exist_ok=True)
+os.makedirs(AA, exist_ok=True)
+os.makedirs(B, exist_ok=True)
+os.makedirs(BB, exist_ok=True)
+os.makedirs(C, exist_ok=True)
+os.makedirs(CC, exist_ok=True)
+os.makedirs(D, exist_ok=True)
+os.makedirs(DD, exist_ok=True)
+os.makedirs(E, exist_ok=True)
+os.makedirs(EE, exist_ok=True)
+os.makedirs(F, exist_ok=True)
+os.makedirs(FF, exist_ok=True)
+
+transformImages(A, AA)
+transformImages(B, BB)
+transformImages(C, CC)
+
+transformAnnotations(D, DD)
+transformAnnotations(E, EE)
+transformAnnotations(F, FF)
