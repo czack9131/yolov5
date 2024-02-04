@@ -1,9 +1,0 @@
-path: ../datasets/resized/padded
-train: images/train
-val: images/val
-test: images/test
-labels: labels
-
-nc: 1
-names:
-  - pill

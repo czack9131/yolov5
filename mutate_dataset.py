@@ -1,17 +1,26 @@
 from math import cos, sin
 import os
+import shutil
 from PIL import Image
 
+BASE_DIR = "/home/czack913/Code"
 
-INPUT_IMAGE_DIR = "/home/czack913/Code/datasets/yolo/images/val"
-INPUT_ANNOTATION_DIR = "/home/czack913/Code/datasets/yolo/labels/val"
-OUTPUT_IMAGE_DIR = "/home/czack913/Code/datasets/resized/temp/images"
-OUTPUT_ANNOTATION_DIR = "/home/czack913/Code/datasets/resized/temp/labels"
+
+INPUT_IMAGE_DIR = f"{BASE_DIR}/datasets/yolo/images/train"
+OUTPUT_IMAGE_DIR = f"{BASE_DIR}/datasets/yolo/images/out"
+
+INPUT_ANNOTATION_DIR = f"{BASE_DIR}/datasets/yolo/labels/train"
+OUTPUT_ANNOTATION_DIR = f"{BASE_DIR}/datasets/yolo/labels/out"
+
+MUTATED_IMAGE_DIR = f"{BASE_DIR}/datasets/resized/temp/images"
+MUTATED_ANNOTATION_DIR = f"{BASE_DIR}/datasets/resized/temp/labels"
 
 os.makedirs(INPUT_IMAGE_DIR, exist_ok=True)
 os.makedirs(OUTPUT_IMAGE_DIR, exist_ok=True)
+os.makedirs(MUTATED_IMAGE_DIR, exist_ok=True)
 os.makedirs(INPUT_ANNOTATION_DIR, exist_ok=True)
 os.makedirs(OUTPUT_ANNOTATION_DIR, exist_ok=True)
+os.makedirs(MUTATED_ANNOTATION_DIR, exist_ok=True)
 
 ANGLE_TO_RADIANS_FACTOR = 3.141592653589793 / 180.0
 RADIANS = {
@@ -23,20 +32,82 @@ RADIANS = {
     270: 270 * ANGLE_TO_RADIANS_FACTOR,
 }
 
-TRIG = {
-    45: {"_sin": sin(RADIANS[45]), "_cos": cos(RADIANS[45])},
-    90: {"_sin": sin(RADIANS[90]), "_cos": cos(RADIANS[90])},
-    135: {"_sin": sin(RADIANS[135]), "_cos": cos(RADIANS[135])},
-    180: {"_sin": sin(RADIANS[180]), "_cos": cos(RADIANS[180])},
-    225: {"_sin": sin(RADIANS[225]), "_cos": cos(RADIANS[225])},
-    270: {"_sin": sin(RADIANS[270]), "_cos": cos(RADIANS[270])},
-}
+
+class Annotation:
+    label: int
+    cx: float
+    cy: float
+    w: float
+    h: float
+
+    def rotate90(self):
+        return (self.label, self.cy, 1.0 - self.cx, self.h, self.w)
+
+    def rotate180(self):
+        return (self.label, 1.0 - self.cx, 1.0 - self.cy, self.w, self.h)
+
+    def rotate270(self):
+        return (self.label, 1.0 - self.cy, self.cx, self.h, self.w)
 
 
-def getAnnotationPath(jpeg_name: str):
-    txt_name = os.path.splitext(jpeg_name)[0]()
-    txt_filepath = os.path.join(INPUT_ANNOTATION_DIR, f"{txt_name}.txt")
+def reformatNames(in_dir: str, out_dir: str, exts: tuple[str]):
+    os.makedirs(in_dir, exist_ok=True)
+    os.makedirs(out_dir, exist_ok=True)
+
+    for filename in os.listdir(in_dir):
+        input_path = os.path.join(in_dir, filename)
+        lower = filename.lower()
+        if lower.endswith(exts):
+            ts_part = filename.split("_")[1]
+            part = ts_part[:14]
+
+            (_, ext) = os.path.splitext(lower)
+            if ext == ".jpg":
+                ext = ".jpeg"
+
+            output_fn = f"images_{part}{ext}"
+            output_path = os.path.join(out_dir, output_fn)
+
+            shutil.copy(input_path, output_path)
+
+
+def getAnnotationPath(jpeg_name: str, output_dir: str) -> str:
+    txt_name = os.path.splitext(jpeg_name)[0]
+    txt_filepath = os.path.join(output_dir, f"{txt_name}.txt")
     return txt_filepath
+
+
+def transformAnnotations(input_dir: str, output_dir: str):
+    for filename in os.listdir(input_dir):
+        lower = filename.lower()
+        (base, ext) = os.path.splitext(lower)
+        if ext == ".txt":
+            input_path = os.path.join(input_dir, lower)
+
+            for angle in [90, 180, 270]:
+                output_path = os.path.join(output_dir, f"{base}_r{angle}{ext}")
+
+                with open(input_path, "r") as input_file:
+                    lines = input_file.readlines()
+                    transformAnnotation(output_path, lines, angle)
+
+
+def transformImages(input_dir: str, output_dir: str):
+    for filename in os.listdir(input_dir):
+        lower = filename.lower()
+        (base, ext) = os.path.splitext(lower)
+
+        if ext in (".jpg", ".jpeg"):
+            input_path = os.path.join(input_dir, lower)
+
+            for angle in [90, 180, 270]:
+                output_path = os.path.join(output_dir, f"{base}_r{angle}.jpeg")
+
+                try:
+                    with Image.open(input_path) as img:
+                        img.rotate(angle).save(output_path)
+                except Exception as e:
+                    print(f"Error processing {filename}: {str(e)}")
 
 
 def transformAnnotation(output_path: str, lines: list[str], angle: float):
@@ -54,61 +125,31 @@ def transformAnnotation(output_path: str, lines: list[str], angle: float):
 
             # Extract values
             class_label, x_center, y_center, width, height = map(float, values)
-
-            x_center = x_center * TRIG[angle]._cos - y_center * TRIG[angle]._sin
-            y_center = x_center * TRIG[angle]._sin + y_center * TRIG[angle]._cos
+            if angle == 90:
+                new_x_center = y_center
+                new_y_center = 1.0 - x_center
+                new_width = height
+                new_height = width
+            elif angle == 180:
+                new_x_center = 1.0 - x_center
+                new_y_center = 1.0 - y_center
+                new_width = width
+                new_height = height
+            elif angle == 270:
+                new_x_center = 1.0 - y_center
+                new_y_center = x_center
+                new_width = height
+                new_height = width
 
             # Write the scaled annotation to the output file
             output_file.write(
-                f"{int(class_label)} {x_center} {y_center} {width} {height}\n"
+                f"{int(class_label)} {new_x_center} {new_y_center} {new_width} {new_height}\n"
             )
 
 
-def transformAnnotations():
-    for filename in os.listdir(INPUT_ANNOTATION_DIR):
-        if filename.lower().endswith(".txt"):
-            input_path = os.path.join(INPUT_ANNOTATION_DIR, filename)
-            path_r45 = os.path.join(OUTPUT_ANNOTATION_DIR, f"{filename}_r45.txt")
-            path_r90 = os.path.join(OUTPUT_ANNOTATION_DIR, f"{filename}_r90.txt")
-            path_r135 = os.path.join(OUTPUT_ANNOTATION_DIR, f"{filename}_r135.txt")
-            path_r180 = os.path.join(OUTPUT_ANNOTATION_DIR, f"{filename}_r180.txt")
-            path_r225 = os.path.join(OUTPUT_ANNOTATION_DIR, f"{filename}_r225.txt")
-            path_r270 = os.path.join(OUTPUT_ANNOTATION_DIR, f"{filename}_r270.txt")
+# reformatNames(INPUT_ANNOTATION_DIR, OUTPUT_ANNOTATION_DIR, (".txt", ".jpg", ".jpeg"))
+# reformatNames(INPUT_IMAGE_DIR, OUTPUT_IMAGE_DIR, (".txt", ".jpg", ".jpeg"))
+reformatNames(INPUT_ANNOTATION_DIR, OUTPUT_ANNOTATION_DIR, (".txt", ".jpg", ".jpeg"))
 
-            with open(input_path, "r") as input_file:
-                lines = input_file.readlines()
-                transformAnnotation(path_r45, lines, 45)
-                transformAnnotation(path_r90, lines, 90)
-                transformAnnotation(path_r135, lines, 135)
-                transformAnnotation(path_r180, lines, 180)
-                transformAnnotation(path_r225, lines, 225)
-                transformAnnotation(path_r270, lines, 270)
-
-
-def transformImages():
-    for filename in os.listdir(INPUT_IMAGE_DIR):
-        if filename.lower().endswith((".jpg", ".jpeg")):
-            if os.path.exists(getAnnotationPath(filename)):
-                input_path = os.path.join(INPUT_IMAGE_DIR, filename)
-                path_r45 = os.path.join(OUTPUT_IMAGE_DIR, f"{filename}_r45.jpeg")
-                path_r90 = os.path.join(OUTPUT_IMAGE_DIR, f"{filename}_r90.jpeg")
-                path_r135 = os.path.join(OUTPUT_IMAGE_DIR, f"{filename}_r135.jpeg")
-                path_r180 = os.path.join(OUTPUT_IMAGE_DIR, f"{filename}_r180.jpeg")
-                path_r225 = os.path.join(OUTPUT_IMAGE_DIR, f"{filename}_r225.jpeg")
-                path_r270 = os.path.join(OUTPUT_IMAGE_DIR, f"{filename}_r270.jpeg")
-
-                try:
-                    with Image.open(input_path) as img:
-                        img.rotate(45).save(path_r45)
-                        img.rotate(90).save(path_r90)
-                        img.rotate(135).save(path_r135)
-                        img.rotate(180).save(path_r180)
-                        img.rotate(225).save(path_r225)
-                        img.rotate(270).save(path_r270)
-
-                except Exception as e:
-                    print(f"Error processing {filename}: {str(e)}")
-
-
-transformImages()
-transformAnnotations()
+# transformImages(OUTPUT_IMAGE_DIR, MUTATED_IMAGE_DIR)
+# transformAnnotations(OUTPUT_ANNOTATION_DIR, MUTATED_ANNOTATION_DIR)
